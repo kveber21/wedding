@@ -85,11 +85,19 @@ export const GuestbookCard: React.FC<GuestbookCardProps> = ({
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4 pb-3 border-b border-amber-100">
         <div className="flex items-center gap-2.5">
           <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-base border border-amber-200 shrink-0">
-            {entry.author.charAt(0).toUpperCase() || <User className="w-5 h-5" />}
+            {isLocked ? (
+              <Lock className="w-5 h-5 text-amber-700" />
+            ) : (
+              entry.author.charAt(0).toUpperCase() || <User className="w-5 h-5" />
+            )}
           </div>
           <div>
             <h4 className="font-bold text-slate-900 text-base sm:text-lg leading-tight flex items-center gap-1.5">
-              <span>{entry.author}</span>
+              {isLocked ? (
+                <span className="italic text-slate-500 font-normal">Auteur masqué (confidentiel)</span>
+              ) : (
+                <span>{entry.author}</span>
+              )}
               {entry.isPrivate && <Lock className="w-3.5 h-3.5 text-amber-700 inline" />}
             </h4>
             <div className="flex flex-wrap items-center gap-1.5 text-xs text-amber-800/80 font-medium mt-0.5">
@@ -263,10 +271,6 @@ export const GuestbookCard: React.FC<GuestbookCardProps> = ({
             <span>{reactions.sparkle || 0}</span>
           </button>
         </div>
-
-        <span className="text-[11px] text-slate-400 italic">
-          Mariage Katia & JF
-        </span>
       </div>
     </article>
   );

@@ -49,9 +49,15 @@ export const GuestbookList: React.FC<GuestbookListProps> = ({
   };
 
   const filteredEntries = entries.filter((entry) => {
+    // If an entry is private and the PIN is not unlocked, do not match its author or message in search
+    const isSecretLocked = entry.isPrivate && !isPinUnlocked;
+    const authorText = isSecretLocked ? '' : entry.author.toLowerCase();
+    const messageText = isSecretLocked ? '' : entry.message.toLowerCase();
+
     const matchesSearch =
-      entry.author.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      entry.message.toLowerCase().includes(searchTerm.toLowerCase());
+      !searchTerm ||
+      authorText.includes(searchTerm.toLowerCase()) ||
+      messageText.includes(searchTerm.toLowerCase());
 
     const matchesPhotos = !onlyWithPhotos || (entry.photos && entry.photos.length > 0);
 
@@ -130,113 +136,41 @@ export const GuestbookList: React.FC<GuestbookListProps> = ({
         </div>
       )}
 
-      {/* PIN Security Banner / Controls */}
-      <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-amber-50/90 rounded-xl border border-amber-200">
-        <div className="flex items-center gap-2 text-xs text-slate-700">
-          <span className="font-bold text-amber-950 flex items-center gap-1">
-            {isPinUnlocked ? (
-              <Unlock className="w-4 h-4 text-emerald-600" />
-            ) : (
-              <Lock className="w-4 h-4 text-amber-700" />
-            )}
-            <span>Espace Mariés :</span>
-          </span>
-          <span className="text-slate-600">
-            {isPinUnlocked
-              ? 'Accès déverrouillé (messages privés visibles)'
-              : 'Messages privés verrouillés'}
-          </span>
-        </div>
-
-        {isPinUnlocked ? (
-          <button
-            type="button"
-            onClick={onLockPin}
-            className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition active:scale-95 touch-manipulation"
-          >
-            Reverrouiller
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={onRequestUnlockPin}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-500 text-amber-950 text-xs font-bold transition shadow-2xs active:scale-95 touch-manipulation cursor-pointer"
-          >
-            <KeyRound className="w-3.5 h-3.5 text-amber-900" />
-            <span>Entrer le code PIN</span>
-          </button>
-        )}
-      </div>
-
-      {/* Search & Filter Toolbar - Mobile Friendly */}
-      {entries.length > 1 && (
-        <div className="bg-white/90 backdrop-blur-sm p-3 sm:p-4 rounded-xl border border-amber-200 shadow-xs flex flex-col gap-3">
-          <div className="relative w-full">
+      {/* Search & Filter Toolbar for guests - clean and unobtrusive */}
+      {entries.length > 2 && (
+        <div className="bg-white/90 backdrop-blur-sm p-3 sm:p-3.5 rounded-xl border border-amber-200 shadow-xs flex flex-col sm:flex-row items-center gap-2.5">
+          <div className="relative w-full flex-1">
             <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Rechercher par nom d'invité ou mot-clé..."
-              className="w-full pl-9 pr-8 py-2.5 text-sm rounded-lg border border-slate-200 focus:border-amber-400 focus:ring-1 focus:ring-amber-300 outline-none min-h-[42px]"
+              className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm rounded-lg border border-slate-200 focus:border-amber-400 focus:ring-1 focus:ring-amber-300 outline-none min-h-[38px]"
             />
             {searchTerm && (
               <button
+                type="button"
                 onClick={() => setSearchTerm('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 p-1"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
               >
                 Effacer
               </button>
             )}
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setOnlyWithPhotos(!onlyWithPhotos)}
-              className={`text-xs font-semibold px-3 py-2 rounded-lg border flex items-center gap-1.5 transition min-h-[38px] touch-manipulation ${
-                onlyWithPhotos
-                  ? 'bg-amber-200 border-amber-400 text-amber-950 shadow-xs'
-                  : 'bg-white border-slate-200 text-slate-700 hover:bg-amber-50'
-              }`}
-            >
-              <Image className="w-3.5 h-3.5 text-amber-700" />
-              <span>Avec photos</span>
-            </button>
-
-            {hasPrivateMessages && (
-              <div className="inline-flex rounded-lg border border-slate-200 bg-white p-0.5 text-xs">
-                <button
-                  type="button"
-                  onClick={() => setVisibilityFilter('all')}
-                  className={`px-2.5 py-1.5 rounded-md font-medium transition min-h-[34px] touch-manipulation ${
-                    visibilityFilter === 'all' ? 'bg-amber-100 text-amber-950 font-bold' : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Tous
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setVisibilityFilter('public')}
-                  className={`px-2.5 py-1.5 rounded-md font-medium transition min-h-[34px] touch-manipulation ${
-                    visibilityFilter === 'public' ? 'bg-amber-100 text-amber-950 font-bold' : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Publics
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setVisibilityFilter('private')}
-                  className={`px-2.5 py-1.5 rounded-md font-medium transition flex items-center gap-1 min-h-[34px] touch-manipulation ${
-                    visibilityFilter === 'private' ? 'bg-amber-100 text-amber-950 font-bold' : 'text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <Lock className="w-3 h-3 text-amber-800" />
-                  <span>Réservé aux mariés</span>
-                </button>
-              </div>
-            )}
-          </div>
+          <button
+            type="button"
+            onClick={() => setOnlyWithPhotos(!onlyWithPhotos)}
+            className={`text-xs font-semibold px-3 py-2 rounded-lg border flex items-center gap-1.5 transition min-h-[38px] touch-manipulation whitespace-nowrap cursor-pointer shrink-0 ${
+              onlyWithPhotos
+                ? 'bg-amber-200 border-amber-400 text-amber-950 shadow-xs'
+                : 'bg-white border-slate-200 text-slate-700 hover:bg-amber-50'
+            }`}
+          >
+            <Image className="w-3.5 h-3.5 text-amber-700" />
+            <span>Photos uniquement</span>
+          </button>
         </div>
       )}
 
@@ -270,6 +204,46 @@ export const GuestbookList: React.FC<GuestbookListProps> = ({
             />
           ))
         )}
+      </div>
+
+      {/* PIN Security Banner / Controls - Placé discrètement tout en bas pour ne pas gêner les invités */}
+      <div className="mt-8 pt-4 border-t border-amber-200/80">
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-3.5 bg-amber-50/80 rounded-xl border border-amber-200 text-xs text-slate-700">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-amber-950 flex items-center gap-1.5">
+              {isPinUnlocked ? (
+                <Unlock className="w-4 h-4 text-emerald-600" />
+              ) : (
+                <Lock className="w-4 h-4 text-amber-700" />
+              )}
+              <span>Espace Mariés :</span>
+            </span>
+            <span className="text-slate-600">
+              {isPinUnlocked
+                ? 'Accès déverrouillé (messages privés visibles)'
+                : 'Messages confidentiels réservés aux mariés'}
+            </span>
+          </div>
+
+          {isPinUnlocked ? (
+            <button
+              type="button"
+              onClick={onLockPin}
+              className="px-3 py-1.5 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-semibold transition active:scale-95 touch-manipulation cursor-pointer"
+            >
+              Reverrouiller
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={onRequestUnlockPin}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-400 hover:bg-amber-500 text-amber-950 text-xs font-bold transition shadow-2xs active:scale-95 touch-manipulation cursor-pointer"
+            >
+              <KeyRound className="w-3.5 h-3.5 text-amber-900" />
+              <span>Accès Mariés (code PIN)</span>
+            </button>
+          )}
+        </div>
       </div>
     </section>
   );
