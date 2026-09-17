@@ -26,7 +26,10 @@ export async function fetchSharedGuestbookEntries(): Promise<GuestbookEntry[]> {
       throw new Error(`Server returned status ${res.status}`);
     }
     const data = await res.json();
-    const serverEntries: GuestbookEntry[] = data.entries || [];
+    const serverEntries: GuestbookEntry[] = (data.entries || []).map((e: any, idx: number) => ({
+      ...e,
+      id: e.id !== undefined && e.id !== null && e.id !== '' ? e.id : `srv-${Date.now()}-${idx}`
+    }));
 
     // Merge: ensure any local entries not yet on server get merged, and reactions are preserved
     const combinedMap = new Map<string, GuestbookEntry>();
@@ -34,11 +37,13 @@ export async function fetchSharedGuestbookEntries(): Promise<GuestbookEntry[]> {
       combinedMap.set(String(e.id), e);
     }
     for (const e of localEntries) {
-      const existing = combinedMap.get(String(e.id));
+      const entryId = e.id !== undefined && e.id !== null && e.id !== '' ? e.id : `loc-${Date.now()}`;
+      const normalizedEntry = { ...e, id: entryId };
+      const existing = combinedMap.get(String(entryId));
       if (!existing) {
-        combinedMap.set(String(e.id), e);
+        combinedMap.set(String(entryId), normalizedEntry);
         // Silently sync missing local entry to server
-        syncEntryToServer(e).catch(() => {});
+        syncEntryToServer(normalizedEntry).catch(() => {});
       } else {
         // Merge reactions using the highest count between server and local
         const mergedReactions = {

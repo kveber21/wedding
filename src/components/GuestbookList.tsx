@@ -191,18 +191,23 @@ export const GuestbookList: React.FC<GuestbookListProps> = ({
             </p>
           </div>
         ) : (
-          filteredEntries.map((entry) => (
-            <GuestbookCard
-              key={entry.id}
-              entry={entry}
-              isPinUnlocked={isPinUnlocked}
-              canDelete={canDelete}
-              onDelete={onDelete}
-              onRequestUnlockPin={onRequestUnlockPin}
-              onOpenPhoto={onOpenPhoto}
-              onAddReaction={onAddReaction}
-            />
-          ))
+          filteredEntries.map((entry, index) => {
+            const entryKey = entry.id !== undefined && entry.id !== null && entry.id !== ''
+              ? `entry-${entry.id}`
+              : `entry-idx-${index}-${entry.timestamp || index}`;
+            return (
+              <GuestbookCard
+                key={entryKey}
+                entry={entry}
+                isPinUnlocked={isPinUnlocked}
+                canDelete={canDelete}
+                onDelete={onDelete}
+                onRequestUnlockPin={onRequestUnlockPin}
+                onOpenPhoto={onOpenPhoto}
+                onAddReaction={onAddReaction}
+              />
+            );
+          })
         )}
       </div>
 

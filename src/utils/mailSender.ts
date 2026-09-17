@@ -42,19 +42,11 @@ export async function sendEntryByEmail(entry: {
       Lien_du_livre_d_or: currentSiteUrl,
     };
 
-    // FormSubmit allows sending photo attachments or base64 files
-    // Include the first photo data/name if attached
+    // Note: FormSubmit ajax endpoint limits JSON payload size (HTTP 413 error if base64 images are sent).
+    // Send filenames and direct instructions so mobile networks never drop the email.
     if (photos.length > 0) {
-      photos.slice(0, 3).forEach((p, idx) => {
-        // If image is base64, include a readable preview snippet or filename
-        payload[`Photo_${idx + 1}`] = p.name || `Photo ${idx + 1}`;
-        // FormSubmit supports direct file URL or image data
-        if (p.url && p.url.startsWith('data:image')) {
-          // Provide image preview html or reference
-          payload[`Apercu_Photo_${idx + 1}`] = p.url.length > 500000 
-            ? `${p.name} (fichier image disponible directement sur le livre d'or)`
-            : p.url;
-        }
+      photos.forEach((p, idx) => {
+        payload[`Photo_${idx + 1}`] = p.name ? `${p.name} (consultable sur le livre d'or)` : `Photo ${idx + 1}`;
       });
     }
 
