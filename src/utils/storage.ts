@@ -1,3 +1,9 @@
+export const INITIAL_QUESTIONS = [
+  "Une anecdote amusante sur les mariés pendant la soirée ?",
+  "Un mot doux ou un souhait pour notre avenir ?",
+  "Un souvenir marquant du mariage que vous souhaitez partager ?"
+];
+
 import { createClient } from '@supabase/supabase-js';
 import { GuestbookEntry } from '../types';
 
