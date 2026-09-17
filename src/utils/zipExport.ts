@@ -13,7 +13,6 @@ export async function downloadAllPhotosZip(entries: GuestbookEntry[]): Promise<{
 
   // Text summary of entries
   let recapitulatif = `LIVRE D'OR DE MARIAGE - KATIA & JEAN-FRANÇOIS\n`;
-  recapitulatif += `Date de l'événement : 25 Juillet 2026\n`;
   recapitulatif += `Archive photos générée le : ${new Date().toLocaleDateString('fr-FR')} à ${new Date().toLocaleTimeString('fr-FR')}\n`;
   recapitulatif += `Email de réception : k.jf.mariage@gmail.com\n\n`;
   recapitulatif += `====================================================\n\n`;

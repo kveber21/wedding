@@ -4,11 +4,16 @@ import { GuestbookList } from './components/GuestbookList';
 import { PhotoLightbox } from './components/PhotoLightbox';
 import { PinModal } from './components/PinModal';
 import { GuestbookEntry, PhotoAttachment } from './types';
-import { loadGuestbookEntries, saveGuestbookEntries } from './utils/storage';
+import {
+  fetchSharedGuestbookEntries,
+  createSharedGuestbookEntry,
+  updateSharedReaction,
+  loadLocalGuestbookEntries
+} from './utils/storage';
 import { Heart } from 'lucide-react';
 
 export default function App() {
-  const [entries, setEntries] = useState<GuestbookEntry[]>([]);
+  const [entries, setEntries] = useState<GuestbookEntry[]>(() => loadLocalGuestbookEntries());
   const [activeLightbox, setActiveLightbox] = useState<{
     photos: PhotoAttachment[];
     index: number;
@@ -23,10 +28,25 @@ export default function App() {
   });
   const [isPinModalOpen, setIsPinModalOpen] = useState(false);
 
-  // Load entries on mount
+  // Sync entries on mount and periodically poll for updates from other guests
   useEffect(() => {
-    const loaded = loadGuestbookEntries();
-    setEntries(loaded);
+    let isMounted = true;
+
+    const refreshEntries = async () => {
+      const fetched = await fetchSharedGuestbookEntries();
+      if (isMounted) {
+        setEntries(fetched);
+      }
+    };
+
+    refreshEntries();
+    // Poll every 5 seconds so guests see new messages almost in real time
+    const interval = setInterval(refreshEntries, 5000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
   }, []);
 
   const handleUnlockPinSuccess = () => {
@@ -48,7 +68,7 @@ export default function App() {
   };
 
   // Save when entries update
-  const handleAddEntry = (author: string, message: string, photos: PhotoAttachment[], isPrivate: boolean) => {
+  const handleAddEntry = async (author: string, message: string, photos: PhotoAttachment[], isPrivate: boolean) => {
     const now = new Date();
     const formattedDate = now.toLocaleDateString('fr-FR', {
       day: 'numeric',
@@ -70,27 +90,32 @@ export default function App() {
       }
     };
 
-    const updated = [newEntry, ...entries];
-    setEntries(updated);
-    saveGuestbookEntries(updated);
+    // Optimistic UI update
+    setEntries((prev) => [newEntry, ...prev.filter((e) => e.id !== newEntry.id)]);
+    // Persist to shared server database
+    await createSharedGuestbookEntry(newEntry);
   };
 
   const handleAddReaction = (id: string | number, reactionType: 'heart' | 'toast' | 'lemon' | 'sparkle') => {
     setEntries((prev) => {
+      let updatedReactions: GuestbookEntry['reactions'] = {};
       const next = prev.map((entry) => {
         if (entry.id === id) {
           const reactions = entry.reactions || {};
+          updatedReactions = {
+            ...reactions,
+            [reactionType]: (reactions[reactionType] || 0) + 1
+          };
           return {
             ...entry,
-            reactions: {
-              ...reactions,
-              [reactionType]: (reactions[reactionType] || 0) + 1
-            }
+            reactions: updatedReactions
           };
         }
         return entry;
       });
-      saveGuestbookEntries(next);
+
+      // Sync to shared backend
+      updateSharedReaction(String(id), updatedReactions);
       return next;
     });
   };
@@ -102,7 +127,6 @@ export default function App() {
   const handleExportSouvenirs = () => {
     const exportData = {
       title: "Contribue à nos souvenirs de mariage - Katia & Jean-François",
-      weddingDate: "25 Juillet 2026",
       mailbox: "k.jf.mariage@gmail.com",
       exportedAt: new Date().toISOString(),
       totalEntries: entries.length,
@@ -136,14 +160,6 @@ export default function App() {
             <span>🍋</span>
             <span>🍷</span>
             <span>🍕</span>
-          </div>
-
-          <div className="flex items-center justify-center gap-2 mb-1.5">
-            <span className="h-px w-6 bg-amber-300"></span>
-            <p className="text-xs font-bold uppercase tracking-widest text-amber-700">
-              25 Juillet 2026
-            </p>
-            <span className="h-px w-6 bg-amber-300"></span>
           </div>
 
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif-title font-bold text-slate-900 tracking-tight mb-1">
@@ -206,8 +222,6 @@ export default function App() {
       <footer className="mt-16 text-center text-xs text-amber-900/70 border-t border-amber-200/60 pt-6 pb-6">
         <p className="flex items-center justify-center gap-1.5 font-medium">
           <span>Mariage de Katia & Jean-François</span>
-          <span>•</span>
-          <span>25 Juillet 2026</span>
           <span>•</span>
           <Heart className="w-3.5 h-3.5 fill-amber-600 text-amber-600" />
         </p>
