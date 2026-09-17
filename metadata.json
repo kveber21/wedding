@@ -1,6 +1,6 @@
 {
-  "name": "Contribue à nos souvenirs de mariage - Katia & Jean-François",
-  "description": "Contribue à nos souvenirs de mariage pour Katia & Jean-François avec anecdotes, messages d'inspiration et partage de photos.",
+  "name": "Contribuez à nos souvenirs de mariage - Katia & Jean-François",
+  "description": "Contribuez à nos souvenirs de mariage pour Katia & Jean-François avec anecdotes, messages d'inspiration et partage de photos.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -1,10 +1,12 @@
-import React from 'react';
-import { Heart, Wine, Sparkles, Calendar, User, Lock, Unlock, KeyRound } from 'lucide-react';
+import React, { useState } from 'react';
+import { Heart, Wine, Sparkles, Calendar, Clock, User, Lock, Unlock, KeyRound, Trash2 } from 'lucide-react';
 import { GuestbookEntry, PhotoAttachment } from '../types';
 
 interface GuestbookCardProps {
   entry: GuestbookEntry;
   isPinUnlocked?: boolean;
+  canDelete?: boolean;
+  onDelete?: (id: string | number) => void;
   onRequestUnlockPin?: () => void;
   onOpenPhoto: (photos: PhotoAttachment[], index: number) => void;
   onAddReaction: (id: string | number, reactionType: 'heart' | 'toast' | 'lemon' | 'sparkle') => void;
@@ -13,10 +15,13 @@ interface GuestbookCardProps {
 export const GuestbookCard: React.FC<GuestbookCardProps> = ({
   entry,
   isPinUnlocked = false,
+  canDelete = false,
+  onDelete,
   onRequestUnlockPin,
   onOpenPhoto,
   onAddReaction
 }) => {
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const reactions = entry.reactions || {};
 
   // Check if message starts with an inspiration question
@@ -26,6 +31,28 @@ export const GuestbookCard: React.FC<GuestbookCardProps> = ({
   const messageBody = hasQuestionHeader ? parts.slice(1).join('\n\n') : entry.message;
 
   const isLocked = entry.isPrivate && !isPinUnlocked;
+
+  // Extract date and time, deriving hour/minute from timestamp if older entry has date only
+  const getDateTimeDisplay = () => {
+    let datePart = entry.date;
+    let timePart = '';
+
+    if (entry.date && entry.date.includes(' à ')) {
+      const splitParts = entry.date.split(' à ');
+      datePart = splitParts[0];
+      timePart = splitParts[1];
+    } else if (entry.timestamp && !isNaN(entry.timestamp)) {
+      const d = new Date(entry.timestamp);
+      timePart = d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+      if (!datePart) {
+        datePart = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+      }
+    }
+
+    return { datePart, timePart };
+  };
+
+  const { datePart, timePart } = getDateTimeDisplay();
 
   return (
     <article
@@ -54,7 +81,7 @@ export const GuestbookCard: React.FC<GuestbookCardProps> = ({
         </div>
       )}
 
-      {/* Top row: author + date */}
+      {/* Top row: author + date & time */}
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4 pb-3 border-b border-amber-100">
         <div className="flex items-center gap-2.5">
           <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-base border border-amber-200 shrink-0">
@@ -65,15 +92,64 @@ export const GuestbookCard: React.FC<GuestbookCardProps> = ({
               <span>{entry.author}</span>
               {entry.isPrivate && <Lock className="w-3.5 h-3.5 text-amber-700 inline" />}
             </h4>
-            <div className="flex items-center gap-1.5 text-xs text-amber-800/80 font-medium mt-0.5">
-              <Calendar className="w-3.5 h-3.5 text-amber-600" />
-              <span>{entry.date}</span>
+            <div className="flex flex-wrap items-center gap-1.5 text-xs text-amber-800/80 font-medium mt-0.5">
+              <span className="flex items-center gap-1">
+                <Calendar className="w-3.5 h-3.5 text-amber-600" />
+                <span>{datePart}</span>
+              </span>
+              {timePart && (
+                <>
+                  <span className="text-amber-400">•</span>
+                  <span className="flex items-center gap-1 text-amber-900/90 font-medium">
+                    <Clock className="w-3.5 h-3.5 text-amber-600" />
+                    <span>{timePart}</span>
+                  </span>
+                </>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Lemon / wedding mini stamp */}
-        <span className="text-xl select-none" title="Souvenir de mariage">🍋</span>
+        {/* Right side: Lemon stamp + Admin delete button if unlocked */}
+        <div className="flex items-center gap-2">
+          {canDelete && (
+            <div>
+              {isConfirmingDelete ? (
+                <div className="flex items-center gap-1.5 bg-rose-50 border border-rose-200 px-2 py-1 rounded-lg text-xs animate-in fade-in">
+                  <span className="text-rose-800 font-medium text-[11px]">Supprimer ?</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsConfirmingDelete(false);
+                      onDelete?.(entry.id);
+                    }}
+                    className="px-2 py-0.5 bg-rose-600 hover:bg-rose-700 text-white rounded font-bold transition text-[11px]"
+                  >
+                    Oui
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsConfirmingDelete(false)}
+                    className="px-1.5 py-0.5 text-slate-600 hover:text-slate-900 rounded text-[11px]"
+                  >
+                    Non
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsConfirmingDelete(true)}
+                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                  title="Supprimer ce message (Admin)"
+                  aria-label="Supprimer ce message"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          )}
+          <span className="text-xl select-none" title="Souvenir de mariage">🍋</span>
+        </div>
       </div>
 
       {/* Message content (or locked view) */}

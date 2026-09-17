@@ -7,6 +7,8 @@ import { downloadAllPhotosZip } from '../utils/zipExport';
 interface GuestbookListProps {
   entries: GuestbookEntry[];
   isPinUnlocked: boolean;
+  canDelete?: boolean;
+  onDelete?: (id: string | number) => void;
   onRequestUnlockPin: () => void;
   onLockPin: () => void;
   onOpenPhoto: (photos: PhotoAttachment[], index: number) => void;
@@ -17,6 +19,8 @@ interface GuestbookListProps {
 export const GuestbookList: React.FC<GuestbookListProps> = ({
   entries,
   isPinUnlocked,
+  canDelete = false,
+  onDelete,
   onRequestUnlockPin,
   onLockPin,
   onOpenPhoto,
@@ -258,6 +262,8 @@ export const GuestbookList: React.FC<GuestbookListProps> = ({
               key={entry.id}
               entry={entry}
               isPinUnlocked={isPinUnlocked}
+              canDelete={canDelete}
+              onDelete={onDelete}
               onRequestUnlockPin={onRequestUnlockPin}
               onOpenPhoto={onOpenPhoto}
               onAddReaction={onAddReaction}

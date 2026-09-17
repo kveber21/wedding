@@ -92,11 +92,16 @@ export const GuestbookForm: React.FC<GuestbookFormProps> = ({ onSubmitEntry }) =
     onSubmitEntry(cleanAuthor, cleanMessage, photos, isPrivate);
 
     const now = new Date();
-    const formattedDate = now.toLocaleDateString('fr-FR', {
+    const dateFormatted = now.toLocaleDateString('fr-FR', {
       day: 'numeric',
       month: 'long',
       year: 'numeric'
     });
+    const timeFormatted = now.toLocaleTimeString('fr-FR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    const formattedDate = `${dateFormatted} à ${timeFormatted}`;
 
     const mailto = createMailtoLink({
       author: cleanAuthor,
@@ -110,7 +115,7 @@ export const GuestbookForm: React.FC<GuestbookFormProps> = ({ onSubmitEntry }) =
       message: cleanMessage,
       date: formattedDate,
       isPrivate,
-      photosCount: photos.length
+      photos
     });
 
     // Trigger celebratory wedding confetti
@@ -196,13 +201,13 @@ export const GuestbookForm: React.FC<GuestbookFormProps> = ({ onSubmitEntry }) =
             </button>
             <div>
               <p className="font-serif-title font-bold text-lg sm:text-xl text-slate-900 flex items-center gap-2">
-                <span>Merci pour ta contribution !</span>
+                <span>Merci pour votre contribution !</span>
                 <span>💛</span>
               </p>
               <p className="text-xs sm:text-sm text-slate-700 mt-0.5 mb-1.5">
                 {submittedSuccess.isPrivate
-                  ? '🔒 Ton message a bien été envoyé en privé pour Katia & Jean-François.'
-                  : "✨ Ton souvenir a été publié avec succès dans le livre d'or partagé !"}
+                  ? '🔒 Votre message a bien été envoyé en privé pour Katia & Jean-François.'
+                  : "✨ Votre souvenir a été publié avec succès dans le livre d'or partagé !"}
               </p>
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 <button

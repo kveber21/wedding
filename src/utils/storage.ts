@@ -28,16 +28,29 @@ export async function fetchSharedGuestbookEntries(): Promise<GuestbookEntry[]> {
     const data = await res.json();
     const serverEntries: GuestbookEntry[] = data.entries || [];
 
-    // Merge: ensure any local entries not yet on server get merged
+    // Merge: ensure any local entries not yet on server get merged, and reactions are preserved
     const combinedMap = new Map<string, GuestbookEntry>();
     for (const e of serverEntries) {
       combinedMap.set(String(e.id), e);
     }
     for (const e of localEntries) {
-      if (!combinedMap.has(String(e.id))) {
+      const existing = combinedMap.get(String(e.id));
+      if (!existing) {
         combinedMap.set(String(e.id), e);
         // Silently sync missing local entry to server
         syncEntryToServer(e).catch(() => {});
+      } else {
+        // Merge reactions using the highest count between server and local
+        const mergedReactions = {
+          heart: Math.max(existing.reactions?.heart || 0, e.reactions?.heart || 0),
+          toast: Math.max(existing.reactions?.toast || 0, e.reactions?.toast || 0),
+          lemon: Math.max(existing.reactions?.lemon || 0, e.reactions?.lemon || 0),
+          sparkle: Math.max(existing.reactions?.sparkle || 0, e.reactions?.sparkle || 0),
+        };
+        combinedMap.set(String(e.id), {
+          ...existing,
+          reactions: mergedReactions,
+        });
       }
     }
 
@@ -84,9 +97,19 @@ async function syncEntryToServer(entry: GuestbookEntry): Promise<boolean> {
  * Syncs reaction counts to the shared backend
  */
 export async function updateSharedReaction(
-  entryId: string,
+  entryId: string | number,
   reactions: GuestbookEntry['reactions']
 ): Promise<void> {
+  // Update locally first
+  const local = loadLocalGuestbookEntries();
+  const updated = local.map((e) => {
+    if (String(e.id) === String(entryId)) {
+      return { ...e, reactions };
+    }
+    return e;
+  });
+  saveLocalGuestbookEntries(updated);
+
   try {
     await fetch(`/api/entries/${entryId}/reactions`, {
       method: 'POST',
@@ -95,6 +118,25 @@ export async function updateSharedReaction(
     });
   } catch (err) {
     console.warn('Failed to sync reactions to server:', err);
+  }
+}
+
+/**
+ * Deletes an entry from both local storage and the shared server database
+ */
+export async function deleteSharedGuestbookEntry(id: string | number): Promise<boolean> {
+  const local = loadLocalGuestbookEntries();
+  const updated = local.filter((e) => String(e.id) !== String(id));
+  saveLocalGuestbookEntries(updated);
+
+  try {
+    const res = await fetch(`/api/entries/${id}`, {
+      method: 'DELETE',
+    });
+    return res.ok;
+  } catch (err) {
+    console.warn('Failed to delete entry from server:', err);
+    return false;
   }
 }
 

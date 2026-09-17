@@ -73,7 +73,7 @@ export const ThankYouModal: React.FC<ThankYouModalProps> = ({
           </div>
 
           <h3 className="text-2xl sm:text-3xl font-serif-title font-bold text-slate-900 tracking-tight mb-2">
-            Merci pour ta contribution !
+            Merci pour votre contribution !
           </h3>
 
           {authorName && (
@@ -84,8 +84,8 @@ export const ThankYouModal: React.FC<ThankYouModalProps> = ({
 
           <p className="text-sm sm:text-base text-slate-600 leading-relaxed mb-6 max-w-md mx-auto">
             {isPrivate
-              ? "Ton mot doux a bien été transmis en privé à Katia & Jean-François."
-              : "Ton message et tes souvenirs ont bien été ajoutés au livre d'or. Ils resteront gravés pour toujours !"}
+              ? "Votre mot doux a bien été transmis en privé à Katia & Jean-François."
+              : "Votre message et vos souvenirs ont bien été ajoutés au livre d'or. Ils resteront gravés pour toujours !"}
           </p>
 
           {/* Action buttons */}

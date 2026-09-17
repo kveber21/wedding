@@ -6,6 +6,7 @@ import {
   getSharedEntries,
   addSharedEntry,
   updateSharedEntryReactions,
+  deleteSharedEntry,
 } from './server/dataStore';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -54,6 +55,19 @@ async function startServer() {
         return res.status(404).json({ error: 'Entrée non trouvée' });
       }
       res.json({ success: true, entry: updated });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.delete('/api/entries/:id', (req, res) => {
+    try {
+      const { id } = req.params;
+      const deleted = deleteSharedEntry(id);
+      if (!deleted) {
+        return res.status(404).json({ error: 'Entrée non trouvée' });
+      }
+      res.json({ success: true, id });
     } catch (err: any) {
       res.status(500).json({ error: err.message });
     }

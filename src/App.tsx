@@ -8,6 +8,7 @@ import {
   fetchSharedGuestbookEntries,
   createSharedGuestbookEntry,
   updateSharedReaction,
+  deleteSharedGuestbookEntry,
   loadLocalGuestbookEntries
 } from './utils/storage';
 import { Heart } from 'lucide-react';
@@ -70,11 +71,16 @@ export default function App() {
   // Save when entries update
   const handleAddEntry = async (author: string, message: string, photos: PhotoAttachment[], isPrivate: boolean) => {
     const now = new Date();
-    const formattedDate = now.toLocaleDateString('fr-FR', {
+    const dateFormatted = now.toLocaleDateString('fr-FR', {
       day: 'numeric',
       month: 'long',
       year: 'numeric'
     });
+    const timeFormatted = now.toLocaleTimeString('fr-FR', {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    const formattedDate = `${dateFormatted} à ${timeFormatted}`;
 
     const newEntry: GuestbookEntry = {
       id: Date.now(),
@@ -100,7 +106,7 @@ export default function App() {
     setEntries((prev) => {
       let updatedReactions: GuestbookEntry['reactions'] = {};
       const next = prev.map((entry) => {
-        if (entry.id === id) {
+        if (String(entry.id) === String(id)) {
           const reactions = entry.reactions || {};
           updatedReactions = {
             ...reactions,
@@ -114,10 +120,17 @@ export default function App() {
         return entry;
       });
 
-      // Sync to shared backend
-      updateSharedReaction(String(id), updatedReactions);
+      // Sync to shared backend and local storage
+      updateSharedReaction(id, updatedReactions);
       return next;
     });
+  };
+
+  const handleDeleteEntry = async (id: string | number) => {
+    // Optimistic UI update
+    setEntries((prev) => prev.filter((e) => String(e.id) !== String(id)));
+    // Delete from shared database
+    await deleteSharedGuestbookEntry(id);
   };
 
   const handleOpenPhoto = (photos: PhotoAttachment[], index: number) => {
@@ -126,7 +139,7 @@ export default function App() {
 
   const handleExportSouvenirs = () => {
     const exportData = {
-      title: "Contribue à nos souvenirs de mariage - Katia & Jean-François",
+      title: "Contribuez à nos souvenirs de mariage - Katia & Jean-François",
       mailbox: "k.jf.mariage@gmail.com",
       exportedAt: new Date().toISOString(),
       totalEntries: entries.length,
@@ -167,7 +180,7 @@ export default function App() {
           </h1>
 
           <h2 className="text-base sm:text-lg font-medium text-amber-900 italic mb-4 flex items-center justify-center gap-1.5">
-            <span>Contribue à nos souvenirs de mariage</span>
+            <span>Contribuez à nos souvenirs de mariage</span>
             <Heart className="w-4 h-4 text-amber-600 fill-amber-500 inline-block" />
           </h2>
 
@@ -210,6 +223,8 @@ export default function App() {
         <GuestbookList
           entries={entries}
           isPinUnlocked={isPinUnlocked}
+          canDelete={isPinUnlocked}
+          onDelete={handleDeleteEntry}
           onRequestUnlockPin={() => setIsPinModalOpen(true)}
           onLockPin={handleLockPin}
           onOpenPhoto={handleOpenPhoto}
