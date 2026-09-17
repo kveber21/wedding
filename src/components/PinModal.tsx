@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, Unlock, X, KeyRound, AlertCircle, Check } from 'lucide-react';
+import { Lock, Unlock, X, AlertCircle, Check } from 'lucide-react';
 
 interface PinModalProps {
   isOpen: boolean;
@@ -153,13 +153,6 @@ export const PinModal: React.FC<PinModalProps> = ({
           >
             ⌫
           </button>
-        </div>
-
-        <div className="pt-2 border-t border-slate-100">
-          <p className="text-[11px] text-slate-400">
-            <KeyRound className="w-3 h-3 inline mr-1 text-amber-600" />
-            Code par défaut : <strong>2507</strong> (date du mariage : 25/07)
-          </p>
         </div>
       </div>
     </div>
